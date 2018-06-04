@@ -1,0 +1,207 @@
+#
+# Bacula Director client {{ client }} Configuration File
+#
+# Managed by Salt
+#
+{% if job_name %}
+Job {
+  Name = {{ job_name }}
+  Type = {{ job_type }}
+  Level = {{ job_level }}
+{%- if job_base %}
+  Base = {{ job_base }}
+{%- endif %}
+  Accurate = {{ job_accurate }}
+  Spool Attributes = {{ job_spool }}
+  Write Bootstrap = "{{ job_bootstrap }}"
+{%- if job_client_before %}
+  {%- for run_cmd in job_client_before %}
+  ClientRunBeforeJob = "{{ run_cmd }}"
+  {%- endfor %}
+{%- endif %}
+{%- if job_client_after %}
+  {%- for run_cmd in job_client_after %}
+  ClientRunAfterJob = "{{ run_cmd }}"
+  {%- endfor %}
+{%- endif %}
+{%- if job_before %}
+  {%- for run_cmd in job_before %}
+  RunBeforeJob = "{{ run_cmd }}"
+  {%- endfor %}
+{%- endif %}
+{%- if job_after %}
+  {%- for run_cmd in job_after %}
+  RunAfterJob = "{{ run_cmd }}"
+  {%- endfor %}
+{%- endif %} 
+  Client = {{ job_client }}
+  FileSet = {{ job_fileset }}
+{%- if job_prior %}
+  Priority = {{ job_prior }}
+{%- endif %}
+  Messages = {{ job_messages }}
+  Pool = {{ job_pool }}
+{%- if schedule_mon_enabled or schedule_week_enabled or schedule_day_enabled %}
+  Schedule = {{ job_schedule }}
+{%- endif %}
+  Storage = {{ job_storage }}
+}
+{%- endif -%}
+
+{%- if fileset %}
+FileSet { 
+  Name = {{ fileset }}
+  {%- if fs_vss == 'yes' or fs_vss == 'no' %}
+  Enable VSS = {{ fs_vss }} 
+  {%- endif %}
+    Include {
+      Options {
+        compression = {{ fs_comp }}
+        signature = {{ fs_sig }}
+        onefs = {{ fs_onefs }}
+        {%- if fs_portable == 'yes' or fs_portable == 'no' %}
+        portable = {{ fs_portable }}
+        {%- endif %}
+        {%- if fs_acl == 'yes' or fs_acl == 'no' %}
+        aclsupport = {{ fs_acl }}
+        {%- endif %}
+        noatime = {{ fs_noat }}
+        checkfilechanges = {{ fs_check }}
+        {%- if fs_ign_case == 'yes' or fs_ign_case == 'no' %}
+        Ignore Case = {{ fs_ign_case }}
+        {%- endif %}
+        {%- if fs_exclude_win == 'yes' or fs_exclude_win == 'no' %}
+        Exclude = {{ fs_exclude_win }}
+        {%- if fs_wildfile %}
+          {%- for ext in fs_wildfile %}
+        wildfile = "{{ ext }}"
+          {%- endfor %}
+        {%- endif %}
+        {%- if fs_wilddir %}
+          {%- for dir in fs_wilddir %}
+        wilddir = "{{ dir }}"
+          {%- endfor %}
+        {%- endif %}
+        {%- endif %}
+      }
+      {%- if fs_include %}
+        {%- for path in fs_include %}
+      File = "{{ path }}"
+        {%- endfor %}
+      {%- endif %}
+    }
+    Exclude {
+      {%- if fs_exclude %}
+        {%- for path in fs_exclude %}
+      File = "{{ path }}"
+        {%- endfor %}
+      {%- endif %}
+    }
+}
+{%- endif -%}
+
+
+
+{%- if schedule_mon_enabled or schedule_week_enabled or schedule_day_enabled %}
+Schedule {
+  Name = {{ schedule_name }}
+  {%- if schedule_mon_enabled %}
+  Run = Level={{ schedule_mon_level }} Pool={{ schedule_mon_pool }} {{ schedule_mon_day }} at {{ schedule_mon_time }}       # Monthly
+  {%- endif %}
+  {%- if schedule_week_enabled %}
+  Run = Level={{ schedule_week_level }} Pool={{ schedule_week_pool }} {{ schedule_week_day }} at {{ schedule_week_time }}    # Wekly
+  {%- endif %}
+  {%- if schedule_day_enabled %}
+  Run = Level={{ schedule_day_level }} Pool={{ schedule_day_pool }} {{ schedule_day_day }} at {{ schedule_day_time }}  # Daily
+  {%- endif %}
+}
+{%- endif %}
+
+{%- if client_fqdn %}
+Client {            # Client connection
+  Name = {{ client_name }}
+  Address = {{ client_fqdn }}
+  FDPort = {{ client_port }}
+  Catalog = {{ client_catalog }}
+  Password = "{{ client_password }}"    # password on client FD
+  {%- if client_file_ret %} 
+  File Retention = {{ client_file_ret }}
+  {%- endif %}
+  {%- if client_job_ret %}
+  Job Retention = {{ client_job_ret }}
+  {%- endif %}
+  {%- if client_autoprune == 'yes' or client_autoprune == 'no' %}
+  AutoPrune = {{ client_autoprune }}
+  {%- endif %}
+}
+{%- endif -%}
+
+{%- if storage_fqdn %}
+Storage {
+  Name = {{ storage_name }}
+  Address = {{ storage_fqdn }}
+  SDPort = {{ storage_port }}
+  Password = {{ storage_password }}
+  Device = {{ storage_dev }}
+  Media Type = {{ storage_med }}
+}
+{%- endif -%}
+
+{%- if not job_level == 'Base' %}
+Pool {
+  Name = {{ pool_mon_name }}
+  Pool Type = {{ pool_mon_type }}
+  Maximum Volume Jobs = {{ pool_mon_maxj }}
+  Maximum Volume Bytes = {{ pool_mon_maxb }}
+  Volume Retention = {{ pool_mon_ret }}
+  AutoPrune = {{ pool_mon_autoprune }}
+  RecyclePool = {{ pool_mon_rec_pool }}
+  Recycle = {{ pool_mon_rec }}
+  Recycle Oldest Volume = {{ pool_mon_rec_old }}
+  Label Format = "{{ pool_mon_labl_form }}"
+  Storage = {{ pool_mon_stor }}
+}
+{%- endif %}
+
+{%- if schedule_week_enabled %}
+Pool {
+  Name = {{ pool_week_name }}
+  Pool Type = {{ pool_week_type }}
+  Maximum Volume Jobs = {{ pool_week_maxj }}
+  Maximum Volume Bytes = {{ pool_week_maxb }}
+  Volume Retention = {{ pool_week_ret }}
+  AutoPrune = {{ pool_week_autoprune }}
+  RecyclePool = {{ pool_week_rec_pool }}
+  Recycle = {{ pool_week_rec }}
+  Recycle Oldest Volume = {{ pool_week_rec_old }}
+  Label Format = "{{ pool_week_labl_form }}"
+  Storage = {{ pool_week_stor }}
+}
+{%- endif %}
+
+{%- if schedule_day_enabled %}
+Pool {
+  Name = {{ pool_day_name }}
+  Pool Type = {{ pool_day_type }}
+  Volume Use Duration = {{ pool_day_vol_use }}
+  Maximum Volume Bytes = {{ pool_day_maxb }}
+  Volume Retention = {{ pool_day_ret }}
+  AutoPrune = {{ pool_day_autoprune }}
+  RecyclePool = {{ pool_day_rec_pool }}
+  Recycle = {{ pool_day_rec }}
+  Recycle Oldest Volume = {{ pool_day_rec_old }}
+  Label Format = "{{ pool_day_labl_form }}"
+  Storage = {{ pool_day_stor }}
+}
+{%- endif %}
+
+{%- if job_level == 'Base' %}
+Pool {
+  Name = {{ pool_base_name }}
+  Pool Type = {{ pool_base_type }}
+  Maximum Volume Bytes = {{ pool_base_maxb }}
+  Label Format = {{ pool_base_labl_form }}
+  Storage = {{ pool_base_stor }}
+}
+{%- endif -%}
+

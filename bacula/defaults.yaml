@@ -1,0 +1,339 @@
+bacula:
+  console:
+    user: root
+    group: root
+    pkg: bacula-console
+    config_path: /etc/bacula/bconsole.conf
+    config:
+      Name: bacula-dir
+      DIRport: 9101
+      Address: localhost
+      Password: '"password_director"'
+
+  director:
+    simple: True # Director and SD on one host (minimum pillar data )
+    user: bacula
+    group: bacula
+    pkgs: 
+      - bacula-director
+      - bacula-director-mysql
+    #dbroot_user: mysqlRootUser
+    #dbroot_pass: mysqlRootPass
+    service: bacula-director
+    config_path: /etc/bacula/bacula-dir.conf
+    config_dir: /etc/bacula/bacula-dir.conf.d
+    scripts: /etc/bacula/scripts
+    logfile: /var/log/bacula/bacula.log
+    bootstrap_dir: '/srv/bacula/bootstrap'
+    admin_email: 'admin@example.com'
+    clients_defaults:     # client = default
+      job:
+        name: default_Backup # Client Name (Uniq)
+        type: Backup        # type of job
+        level: Incremental  # default backup level (real in Shedule section)
+        base: BaseDebian    # Job name required for dedupe using base jobs
+        accurate: 'yes' # Required to avoid putting jobs in DB before completion (avoids cancelled jobs in the DB)
+        spool: 'yes'
+        bootstrap: '/srv/bacula/bootstrap/default-JobID-%i.bsr'
+        client_before:      # run on client before job
+          - 'su -c /1S_base_backup-root_starter.sh user' 
+        client_after:       # run on client after job
+          - 'su -c /1S_base_backup-move.sh user'
+        before:             # run on director before job
+          - '/etc/bacula/scripts/make_catalog_backup.pl MyCatalog'
+        after:              # run on director after job
+          - '/etc/bacula/scripts/delete_catalog_backup'
+        client: default-fd  # name of client file demon
+        fileset: default    # File Set (uniq for platform)
+        messages: Standard
+        pool: dafault-monthly # Default Pool (real in Shedule section)
+        schedule: default-year
+        storage: FileStorage-default # Default Storage (real in Shedule section)
+        prior: 11
+      fileset:              # Uniq for platform file set
+        name: defaults      # uniq client
+        vss: 'no'           # for TC compatibility
+        portable: 'no'      # if fileset may be removed 
+        comp: GZIP7         # Compress ratio
+        sig: SHA1           # hash summ alg.
+        onefs: 'yes'        
+        acl: 'yes'          # support ext FS
+        noat: 'yes'         # not update read time at backup file
+        check: 'yes'        
+        ign_case: 'yes'     # for windows clients
+        exclude_win: 'yes'      
+        wildfile:           # Exclude media and temp files
+          - '*.avi'
+          - '*.wmv'
+          - '*.mp3'
+          - 'pagefile.sys'
+          - 'hiberfil.sys'
+        wilddir:
+          - 'System Volume Information'
+          - 'TEMP'
+        include:            
+          - '/'
+          - '/boot'
+          - '/home'
+          - 'c:/Scripts'
+          - 'c:/BaculaBackups'
+        exclude:            # Exclude temp and standart files
+          - '/proc'
+          - '/sys'
+          - '/var/cache/apt'
+          - '/var/tmp'
+        fs_defaults: # default values for 
+          linux:
+            include:
+              - '/'
+              - '/boot'
+            exclude:
+              - '/proc'
+              - '/sys'
+              - '/net'
+              - '/media'
+              - '/dev'
+              - '/tmp'
+              - '/run'
+              - '/var/cache/yum'
+              - '/var/cache/apt'
+              - '/.journal'
+              - '/.fsck'
+              - '/var/lib/nfs/rpc_pipefs'
+              - '/.autofsck'
+              - '/selinux'
+              - '/var/named/chroot/proc'
+              - '/var/tmp'
+          windows:
+            wildfile:
+              - '*.avi'
+              - '*.wmv'
+              - '*.mp3'
+              - 'pagefile.sys'
+              - 'hiberfil.sys'
+            wilddir:
+              - 'System Volume Information'
+              - 'TEMP'
+
+      schedule:
+        name: default-year
+        mon:  # Monthly
+          enabled: True
+          level: 'Full'
+          pool: default-monthly
+          day: '1st sun'
+          time: '00:05'
+        week: # Wekly
+          enabled: True      
+          level: 'Full'
+          pool: default-weekly
+          day: '2nd-5th sun'
+          time: '00:05'
+        day:  # Daily
+          enabled: True
+          level: 'Incremental'
+          pool: default-daily
+          day: 'mon-fri'
+          time: '00:05'
+      client: # client connection
+        name: default-fd
+        fqdn: default.example.com
+        port: 9102
+        catalog:  MyCatalog
+        password: 'password_fd'
+        file_ret: '1 year' # Real retention period in Pool section
+        job_ret: '1 year'
+        autoprune: 'yes' # Prune expired Jobs/Files
+      storage:
+        name: FileStorage-default
+        fqdn: sd.example.com
+        port: 9103
+        password: '"password_sd"'
+        dev: FileStorage-default
+        med: File-default
+      pool:
+        mon:
+          name: default-monthly
+          type: Backup
+          maxj: 1
+          maxb: 4650000000 #  DVD-R size
+          ret: '1 year'
+          autoprune: 'yes'
+          rec_pool: default-monthly
+          rec: 'yes'
+          rec_old: 'yes'
+          labl_form: default-monthly-
+          stor: FileStorage-default 
+        week:
+          name: default-weekly
+          type: Backup
+          maxj: 1
+          maxb: 4650000000 #  DVD-R size
+          ret: '35 days'
+          autoprune: 'yes'
+          rec_pool: default-weekly
+          rec: 'yes'
+          rec_old: 'yes'
+          labl_form: default-weekly-
+          stor: FileStorage-default
+        day:
+          name: default-daily
+          type: Backup
+          vol_use: '6 days 18 hours'
+          maxb: 4650000000 #  DVD-R size
+          ret: '31 days' # to restore any day of month
+          autoprune: 'yes'
+          rec_pool: default-daily
+          rec: 'yes'
+          rec_old: 'yes'
+          labl_form: default-daily
+          stor: FileStorage-default
+        base:
+          name: BaseDefault
+          type: Base
+          maxb: 4650000000 #  DVD-R size
+          labl_form: BaseDefault
+          stor: FileStorage-default
+      scripts:
+        dir:
+          'some_script.sh': |
+            #!/bin/bash
+            # do some work
+            touch /tmp/test.me
+            echo "Make some magic"
+
+          'secret_client_key.key': |
+            -----BEGIN RSA PRIVATE KEY-----
+            LMYOF/N6zgbIHmYuc0xuz9QVZJ4
+            l3ieILNbsknVVIKnxOKSrUCAwEA
+            DSgYUrxG9rURas6Qn2LKmmNjlaX
+            -----END RSA PRIVATE KEY-----
+
+        
+
+    config:
+      director:
+        Name: bacula-dir
+        DIRport: 9101
+        QueryFile: '"/etc/bacula/scripts/query.sql"'
+        WorkingDirectory: '"/var/lib/bacula"'
+        PidDirectory: '"/var/run/bacula"'
+        'Maximum Concurrent Jobs': 1
+        Password: '"password_director"'  # console password
+        Messages: Daemon
+        'Heartbeat Interval': 1m
+      catalog:
+        Name: MyCatalog
+        DBName: '"bacula"'
+        'DB Address': '"localhost"'
+        DBUser: '"bacula-dir"'
+        DBPassword: '"password_mysql"'  # used in mysql
+      
+      restore_job:                    # default restore job
+        Name: '"RestoreFiles"'        # Job Name
+        Type: Restore                 # Job Type
+        Client: bacula-fd             # Any
+        FileSet: '"DummyRestoreSet"'  # Any
+        Storage: DummyRestoreStorage  # Any
+        Pool: DummyPool               # Any
+        Messages: Standard
+        Where: '/srv/restored'  # Where put restored files (if  set / system be restored )
+
+      restore_client:
+        Name: bacula-fd
+        Address: 'baculaserver.example.com'
+        FDPort: 9102
+        Catalog: MyCatalog
+        Password: '"password_fd"'       # password for FileDaemon
+        'File Retention': '1 year'      # Real period in Pool section
+        'Job Retention': '1 year'       
+        AutoPrune: 'yes'                # Prune expired Jobs/Files        
+
+      restore_pool:                     # Not used in real restore
+        Name: DummyPool                 # Pool Name
+        'Pool Type': Backup             # Pool Type
+        Recycle: 'yes'                  # Bacula can automatically recycle Volumes
+        AutoPrune: 'yes'                # Prune expired volumes
+        'Volume Retention': '365 days'  # Volume save one year
+
+      restore_storage:    # Not used in real restore but must be a real
+        Name: DummyRestoreStorage           # Storage name
+        Address: 'baculaserver.example.com' # Address
+        SDPort: 9103
+        Password: '"password_storage"'
+        Device: FileStorage-BaculaServer
+        'Media Type': File-BaculaServer
+
+      restore_fileset:
+        Name: '"DummyRestoreSet"'
+
+      monitor:
+        Name: bacula-mon
+        Password: '"password_monitor"'
+        CommandACL: 'status, .status'
+      
+
+
+
+
+  fd:
+    pkg: bacula-fd
+    service: bacula-fd
+    config_path: /etc/bacula/bacula-fd.conf
+    config:
+      director_permitted:
+        Name: bacula-dir
+        Password: '"password_fd"'
+      director_restricted:
+        Name: bacula-mon
+        Password: '"password_fd_mon"'
+        Monitor: 'yes'
+      fd:
+        Name: bacula-fd
+        FDPort: 9102
+        WorkingDirectory: /var/lib/bacula
+        'Pid Directory': /var/run/bacula
+        'Maximum Concurrent Jobs': 20
+        'Heartbeat Interval': '1m'
+      messages:
+        director: bacula-dir
+
+  sd:
+    pkg: bacula-sd
+    service: bacula-sd
+    config_path: /etc/bacula/bacula-sd.conf
+    config_dir: /etc/bacula/bacula-sd.conf.d
+    storage: /srv/bacula
+    fqdn: sd.example.com
+    user: bacula
+    group: bacula
+    config:
+      storage:
+        Name: bacula-sd
+        SDPort: 9103
+        WorkingDirectory: '"/var/lib/bacula"'
+        'Pid Directory': '"/var/run/bacula"'
+        'Maximum Concurrent Jobs': 20
+        'Heartbeat Interval': '1m'
+      director_permitted:
+        Name: bacula-dir
+        Password: '"password_sd"'
+      director_restricted:
+        Name: bacula-mon
+        Password: '"password_sd_mon"'
+        Monitor: 'yes'
+      messages:
+        director: bacula-dir
+    clients_defaults:
+      name: FileStorage-default     # Name
+      dev_arch: /srv/bacula/default # Archive Device
+      dev_type: File                # Device Type
+      med_type: File-default        # Media Type
+      med_rem: 'no'                 # Removable Media
+      ran_acc: 'yes'                # Random Access
+      med_labl: 'yes'               # LabelMedia
+      auto_mnt: 'yes'               # Automatic Mount
+      alw_open: 'no'                # AlwaysOpen
+      max_buff: 65536     # Maximum Network Buffer Size
+
+

@@ -1,0 +1,44 @@
+{%- from "bacula/map.jinja" import map with context -%}
+#
+# Bacula Storage D Main Configuration File
+#
+# Managed by Salt
+#
+
+{% macro set_config(config) -%}
+  {% for parameter in config -%}
+    {% set value = config.get(parameter) -%}
+      {{ parameter }} = {{ value }}
+  {% endfor -%}
+{% endmacro -%}
+
+Storage {
+  {{ set_config(config.storage) }}
+}
+
+# List Directors who are permitted to contact Storage daemon
+Director {
+  {{ set_config(config.director_permitted) }}
+}
+
+# Restricted Director, used by tray-monitor to get the
+#   status of the storage daemon
+Director {
+  {{ set_config(config.director_restricted) }}
+}
+
+
+# Include subfiles associated with configuration of clients.
+# They define the bulk of the Clients, Jobs, and FileSets.
+# Remember to "reload" the Director after adding a client file.
+#
+@|"sh -c 'for f in {{ config_dir }}/*.conf ; do echo @${f} ; done'"
+
+# Send all messages to the Director,
+# mount messages also are sent to the email address
+Messages {
+  Name = Standard
+  director = {{ config.messages.director }} = all
+}
+
+

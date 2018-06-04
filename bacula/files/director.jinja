@@ -1,0 +1,111 @@
+{%- from "bacula/map.jinja" import map with context -%}
+#
+# Bacula Director Main Configuration File
+#
+# Managed by Salt
+#
+
+{% macro set_config(config) -%}
+  {% for parameter in config -%}
+    {% set value = config.get(parameter) -%}
+      {{ parameter }} = {{ value }}
+  {% endfor -%}
+{% endmacro -%}
+
+Director {
+  {{ set_config(config.director) }}
+}
+
+#--- DB Catalog connection ---
+# Generic catalog service
+Catalog {
+  {{ set_config(config.catalog) }}
+}
+#--- DB Catalog connection END ---
+
+#--- Include clients config ---
+# Include subfiles associated with configuration of clients.
+# They define the bulk of the Clients, Jobs, and FileSets.
+# Remember to "reload" the Director after adding a client file.
+#
+@|"sh -c 'for f in {{ config_dir }}/*.conf ; do echo @${f} ; done'"
+#
+#--- Include Clients config END ---
+
+#--- Default restore Job ---
+Job {
+  {{ set_config(config.restore_job) }}
+}
+
+Pool {              # Not used in real restore
+  {{ set_config(config.restore_pool) }}
+}
+
+Client {            # dummy client connection
+  {{ set_config(config.restore_client) }}
+}
+
+Storage {           # Not used in real restore but must be a real
+  {{ set_config(config.restore_storage) }}
+}
+
+FileSet {           # Not used in real restore but must be a real
+  {{ set_config(config.restore_fileset) }}
+  Include {
+    Options {
+      signature = MD5
+    }
+    File = /usr/sbin
+  }
+  Exclude {
+  }
+}
+#--- Default restore Job  End ---
+
+# Reasonable message delivery -- send most everything to email address
+#  and to the console
+Messages {
+  Name = Standard
+
+#
+# NOTE! If you send to two email or more email addresses, you will need
+#  to replace the %r in the from field (-f part) with a single valid
+#  email address in both the mailcommand and the operatorcommand.
+#  What this does is, it sets the email address that emails would display
+#  in the FROM field, which is by default the same email as they're being
+#  sent to.  However, if you send email to more than one address, then
+#  you'll have to set the FROM address manually, to a single address.
+#  for example, a 'no-reply@mydomain.com', is better since that tends to
+#  tell (most) people that its coming from an automated source.
+
+  mailcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) \<%r\>\" -s \"Bacula: %t %e of %c %l %n\" %r"
+  operatorcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) \<%r\>\" -s \"Bacula: Intervention needed for %j\" %r"
+  mail = {{ map.director.admin_email }}  = all, !skipped
+  operator = root = mount
+  console = all, !skipped, !saved
+
+#
+# WARNING! the following will create a file that you must cycle from
+#          time to time as it will grow indefinitely. However, it will
+#          also keep all your messages if they scroll off the console.
+#
+  append = "{{ map.director.logfile }}" = all, !skipped
+  catalog = all
+}
+
+#
+# Message delivery for daemon messages (no job).
+Messages {
+  Name = Daemon
+  mailcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) \<%r\>\" -s \"Bacula daemon message\" %r"
+  mail = root = all, !skipped
+  console = all, !skipped, !saved
+  append = "/var/log/bacula/bacula.log" = all, !skipped
+}
+
+#
+# Restricted console used by tray-monitor to get the status of the director
+#
+Console {
+  {{ set_config(config.monitor) }}
+}

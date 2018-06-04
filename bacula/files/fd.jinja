@@ -1,0 +1,33 @@
+#
+# Managed by Salt
+#
+
+{% macro set_config(config) -%}
+  {% for parameter in config -%}
+    {% set value = config.get(parameter) -%}
+      {{ parameter }} = {{ value }}
+  {% endfor -%}
+{% endmacro -%}
+
+# list Directors who are permitted to contact this File daemon
+Director { 
+  {{ set_config(config.director_permitted) }}
+}
+
+# Restricted Director, used by tray-monitor to get the
+#   status of the file daemon
+Director {
+  {{ set_config(config.director_restricted) }}
+}
+
+# "Global" File daemon configuration specifications
+FileDaemon {
+  {{ set_config(config.fd) }}
+}
+
+# Send all messages except skipped files back to Director
+Messages {
+  Name = Standard
+  director = {{ config.messages.director }} = all, !skipped, !restored
+}
+

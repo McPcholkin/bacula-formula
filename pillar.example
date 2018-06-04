@@ -1,0 +1,179 @@
+
+
+bacula:
+
+  # minimal config to create working bacula director config per user
+  # not set values get from defaults.yaml file
+  clients:
+    client1:
+      os: linux # to use default values set os type "linux" or "windows"
+      dir:
+        schedule:
+          mon:
+            enabled: True
+        job:
+          base: BaseDebian  # base job to reduce backup size
+        client:
+          fqdn: client1.example.com
+          password: "client1_fd_password"
+        fileset:
+          include:
+            - '/some_dir_to_include' # if simple mode enabled end os set
+                                     # this value be merged to defaults,
+                                     # else this value be main
+          exclude:
+            - '/some/dir/to/exclude'
+            - '/raid'
+        pool:
+          day:
+            ret: '7 days'
+
+    
+    BaseCentOS:  # base job without schedule
+      dir:
+        job:
+          name: BaseCentOS
+          level: Base
+          pool: BaseCentOS
+        fileset:
+          comp: GZIP9
+          include:
+            - '/'
+            - '/boot'
+            - '/home'
+          exclude:
+            - '/proc'
+            - '/sys'
+            - '/net'
+            - '/media'
+            - '/dev'
+            - '/tmp'
+            - '/run'
+            - '/var/cache/yum'
+            - '/var/cache/apt'
+            - '/.journal'
+            - '/.fsck'
+            - '/var/lib/nfs/rpc_pipefs'
+            - '/.autofsck'
+            - '/selinux'
+            - '/var/named/chroot/proc'
+            - '/var/tmp'
+        client:
+          fqdn: basecentos.vm.local.example.com
+          password: "pass"
+          file_ret: False
+          job_ret: False
+          autoprune: False
+    
+    Catalog:
+      dir:
+        job:
+          level: Full
+          before:
+            - '/etc/bacula/scripts/make_catalog_backup.pl MyCatalog'
+          after:
+            - '/etc/bacula/scripts/delete_catalog_backup'
+            - '/etc/bacula/scripts/sync_backup.sh'
+          prior: 11
+          client: baculadir-fd
+        client:
+          fqdn: False
+        fileset:
+          sig: MD5
+          include:
+            - '/var/lib/bacula/bacula.sql' # bacula is real database name - chandge it
+        schedule:
+          day:
+            enabled: True
+            level: 'Full'
+            day: 'sun-sat'
+            time: '02:05' # main dayli job run at 00:05 2 hour ned be enough
+        pool:
+          day:
+            vol_use: '2 hour'
+      scripts:
+        dir:
+          'sync_backup.sh': |
+            #!/bin/bash
+            # do sync
+            rsync -Pav --no-perms --no-g --omit-dir-times \
+            -e 'ssh -i /etc/bacula/scripts/remote_host.key' \
+            /raid/ \
+            --exclude-from=/etc/bacula/scripts/exclude.txt \
+            baculadir@remoteHost.example.com:/srv/
+
+          'exclude.txt': |
+            lost+found
+            restored
+            motion
+            distr
+
+          'remote_host.key': |
+            -----BEGIN RSA PRIVATE KEY-----
+            TvfYvJ4Vh1I4noypSWEmE87Ar7K7CrrXQ3tdy3Ho2UVIf
+            ...
+            Obb+WPxrU8oenBV/6pHMyy8YNP
+            -----END RSA PRIVATE KEY-----
+  
+
+    client2:
+      os: windows
+      dir:
+        schedule:
+          mon:
+            enabled: True
+          week:
+            enabled: True
+          day:
+            enabled: True
+        client:
+          fqdn: client2.example.com
+          password: "client2_password_fd"
+        fileset:
+          vss: 'no'   # for TrueCrypt compatibility
+          portable: 'yes' 
+          ign_case: 'yes'
+          wildfile:
+            - 'some_big_file.sys'
+          wilddir:
+            - 'Some_temp_Files'
+          include:
+            - 'z:/' # TC
+
+    client3:
+      os: windows
+      dir:
+        job:
+          level: Full
+          client_before:
+            - 'C:/Scripts/Dump_1C_Main.bat'
+          client_after:
+            - 'C:/Scripts/Move-Main.bat'
+        fileset:
+          portable: 'yes'
+          ign_case: 'yes'
+          include:
+            - 'c:/BaculaBackups/'   # 1C Backup
+            - 'c:/Scripts/'         # Scripts Backup
+        schedule:
+          day:
+            enabled: True
+            level: 'Full'
+        client:
+          fqdn: client3.example.com
+          password: "client3_fd_password"
+          file_ret: '3 year'  # Real period in Pool section
+          job_ret: '3 year'
+        storage:
+          fqdn: remotehost.example.com
+          password: "remoteHost_SD_password"
+        pool:
+          day:
+            ret: '3 year' 
+            vol_use: '5 hour'
+      scripts:
+        client:
+          'Dump_1C_Main.bat': |
+            @ECHO OFF
+            ...
+            :end

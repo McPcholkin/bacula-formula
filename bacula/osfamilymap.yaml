@@ -1,0 +1,6 @@
+Debian: 
+  director:
+    pkgs: 
+      - bacula-director-mysql
+      - bacula-director
+
