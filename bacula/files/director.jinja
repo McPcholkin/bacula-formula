@@ -1,25 +1,30 @@
 {%- from "bacula/map.jinja" import map with context -%}
 #
-# Bacula Director Main Configuration File
+# Bacula Director Main Configuration File for {{ dir_name }}
 #
 # Managed by Salt
 #
 
-{% macro set_config(config) -%}
-  {% for parameter in config -%}
-    {% set value = config.get(parameter) -%}
-      {{ parameter }} = {{ value }}
-  {% endfor -%}
-{% endmacro -%}
-
 Director {
-  {{ set_config(config.director) }}
+  Name = {{ dir_name }}-dir
+  DIRport = {{ dir_port }}
+  Password = "{{ dir_pass }}"
+  QueryFile = "{{ dir_query }}"
+  WorkingDirectory = "{{ dir_work_dir }}"
+  PidDirectory = "{{ dir_pid_dir }}"
+  Maximum Concurrent Jobs = {{ dir_max_jobs }}
+  Messages = {{ dir_messages }}
+  Heartbeat Interval = {{ dir_hb_interval }}
 }
 
 #--- DB Catalog connection ---
 # Generic catalog service
 Catalog {
-  {{ set_config(config.catalog) }}
+  Name = {{ cat_name }}
+  DBName = "{{ cat_db_name }}"
+  DB Address = {{ cat_db_address }}
+  DBUser = {{ cat_db_user }}
+  DBPassword = "{{ cat_db_password }}"  # used in mysql
 }
 #--- DB Catalog connection END ---
 
@@ -34,23 +39,46 @@ Catalog {
 
 #--- Default restore Job ---
 Job {
-  {{ set_config(config.restore_job) }}
+  Name = "{{ restJ_name }}"
+  Type = {{ restJ_type }}
+  Client = {{ restJ_client }}-restore-fd
+  FileSet = "{{ restJ_fileset }}"
+  Storage = {{ restJ_storage }}
+  Pool = {{ restJ_pool }}
+  Messages = {{ restJ_messages }}
+  Where = "{{ restJ_where }}"
 }
 
 Pool {              # Not used in real restore
-  {{ set_config(config.restore_pool) }}
+  Name = {{ restP_name }}
+  Pool Type = {{ restP_type }}
+  Recycle = {{ restP_rec }}
+  AutoPrune = {{ restP_autoprune }}
+  Volume Retention = {{ restP_ret }}
 }
 
 Client {            # dummy client connection
-  {{ set_config(config.restore_client) }}
+  Name = {{ restC_name }}-restore-fd
+  Address = {{ restC_address }}
+  FDPort = {{ restC_port }}
+  Catalog = {{ restC_catalog }}
+  Password = "{{ restC_password }}"
+  File Retention = {{ restC_Fret }}
+  Job Retention = {{ restC_Jret }}
+  AutoPrune = {{ restC_autoprune }}
 }
 
 Storage {           # Not used in real restore but must be a real
-  {{ set_config(config.restore_storage) }}
+  Name = {{ restS_name }}
+  Address = {{ restS_address }}
+  SDPort = {{ restS_port }}
+  Password = "{{ restS_password }}"
+  Device = FileStorage-{{ restS_dev }}
+  Media Type = File-{{ restS_type }}
 }
 
 FileSet {           # Not used in real restore but must be a real
-  {{ set_config(config.restore_fileset) }}
+  Name = "{{ restFS_name }}"
   Include {
     Options {
       signature = MD5
@@ -107,5 +135,7 @@ Messages {
 # Restricted console used by tray-monitor to get the status of the director
 #
 Console {
-  {{ set_config(config.monitor) }}
+  Name = {{ mon_name }}-mon
+  Password = "{{ mon_password }}"
+  CommandACL = {{ mon_acl }}
 }

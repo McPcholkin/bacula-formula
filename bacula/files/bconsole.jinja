@@ -1,17 +1,12 @@
-{%- from "bacula/map.jinja" import map with context -%}
 #
 # Bacula User Agent (or Console) Configuration File
 #
 # Managed by Salt
 #
-
-{% macro set_config(config) -%}
-  {% for parameter in config -%}
-    {% set value = config.get(parameter) -%}
-      {{ parameter }} = {{ value }}
-  {% endfor -%}
-{% endmacro -%}
-
+#
 Director {
-  {{ set_config(config) }}
+  Name = {{ con_name }}-dir   # dir name
+  DIRport = {{ con_port }}    # dir port
+  Address = {{ con_address }} # dir fqdn
+  Password = "{{ con_password }}" # dir password
 }

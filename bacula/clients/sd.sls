@@ -23,6 +23,7 @@ bacula_sd_config_for_{{ client }}:
     - template: jinja
     - makedirs: True
     - context:
+      {# ---- VAR ----- #}
       client: {{ client }}
       dev_name: {{ dev_name }}
       dev_arch: {{ dev_arch }}
@@ -34,6 +35,7 @@ bacula_sd_config_for_{{ client }}:
       auto_mnt: '{{ auto_mnt }}'
       alw_open: '{{ alw_open }}'
       max_buff: {{ max_buff }}
+      {# ----- VAR ----- #}
     - require:
       - pkg: install_bacula_sd
     - watch_in:

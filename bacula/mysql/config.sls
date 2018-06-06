@@ -1,9 +1,9 @@
 {%- from "bacula/map.jinja" import map with context -%}
 
-{% set dbhost = map.director.config.catalog.get('DB Address', 'localhost') | replace('"', '') %}
-{% set dbname = map.director.config.catalog.get('DBName', 'bacula') | replace('"', '') %}
-{% set dbuser = map.director.config.catalog.get('DBUser', 'bacula-dir') | replace('"', '') %}
-{% set dbpass = map.director.config.catalog.get('DBPassword', 'password') | replace('"', '') %}
+{% set dbhost = map.director.config.catalog.get('db_address', 'localhost') %}
+{% set dbname = map.director.config.catalog.get('db_name', 'bacula') %}
+{% set dbuser = map.director.config.catalog.get('db_user', 'bacula-dir') %}
+{% set dbpass = map.director.config.catalog.get('db_password', 'password') %}
 
 {% set dbroot_user = map.director.get('dbroot_user') %}
 {% set dbroot_pass = map.director.get('dbroot_pass') %}

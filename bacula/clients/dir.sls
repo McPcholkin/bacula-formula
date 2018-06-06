@@ -1,6 +1,5 @@
 {%- from "bacula/map.jinja" import map with context -%}
 
-
 include:
   - bacula.director.install
 
@@ -116,7 +115,7 @@ create_bootstrap_dir:
 {% set client_fqdn = salt['pillar.get']('bacula:clients:'~client~':dir:client:fqdn', False) %}
 {% set client_name = salt['pillar.get']('bacula:clients:'~client~':dir:client:name', client~'-fd') %}
 {% set client_port = salt['pillar.get']('bacula:clients:'~client~':dir:client:port', map.director.clients_defaults.client.port) %}
-{% set client_catalog = salt['pillar.get']('bacula:clients:'~client~':dir:client:catalog', map.director.config.catalog.Name) %}
+{% set client_catalog = salt['pillar.get']('bacula:clients:'~client~':dir:client:catalog', map.director.config.catalog.name) %}
 {% set client_password = salt['pillar.get']('bacula:clients:'~client~':dir:client:password', map.director.clients_defaults.client.password) %}
 {% set client_file_ret = salt['pillar.get']('bacula:clients:'~client~':dir:client:file_ret', map.director.clients_defaults.client.file_ret) %}
 {% set client_job_ret = salt['pillar.get']('bacula:clients:'~client~':dir:client:job_ret', map.director.clients_defaults.client.job_ret) %}
@@ -125,8 +124,8 @@ create_bootstrap_dir:
 
 {# ---- STORAGE start ---- #}
 {% if map.director.simple %}
-  {% set sorage_fqdn = salt['pillar.get']('bacula:clients:'~client~':dir:storage:fqdn', map.sd.fqdn) %}
-  {% set storage_password = salt['pillar.get']('bacula:clients:'~client~':dir:storage:password', map.sd.config.director_permitted.Password) %}
+  {% set sorage_fqdn = salt['pillar.get']('bacula:clients:'~client~':dir:storage:fqdn', map.director.fqdn) %}
+  {% set storage_password = salt['pillar.get']('bacula:clients:'~client~':dir:storage:password', map.sd.config.director_permitted.password) %}
 {% else %}
   {% set storage_fqdn = salt['pillar.get']('bacula:clients:'~client~':dir:storage:fqdn', False) %}
   {% set storage_password = salt['pillar.get']('bacula:clients:'~client~':dir:storage:password', map.director.clients_defaults.storage.password) %}
@@ -199,7 +198,9 @@ create_bacula_director_config_for_{{ client }}:
     - template: jinja
     - user: {{ map.director.user }}
     - group: {{ map.director.group }}
+    - makedirs: True
     - context:
+      {# ---- VAR ----- #}
       client: {{ client }}
       job_name: {{ job_name }}            # Client Name (Uniq)
       job_type: {{ job_type }}            # type of job
@@ -307,6 +308,7 @@ create_bacula_director_config_for_{{ client }}:
       pool_base_maxb: {{ pool_base_maxb }}
       pool_base_labl_form: {{ pool_base_labl_form }}
       pool_base_stor: {{ pool_base_stor }}
+      {# ---- VAR ----- #}
     - require:
       - pkg: install_bacula_director
     - watch_in:

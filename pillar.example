@@ -1,6 +1,40 @@
 
-
+# simple mode
 bacula:
+  director:
+    simple: True
+    admin_email: admin@example.com
+    fqdn: baculaDirectorServer.example.com
+    password: 
+    config:
+      director:
+        name: baculaDirectorServer
+        password: 'director_PA$$W0RD'
+      catalog:
+        db_password: 'mysql_bacula_PA$$W0RD' # used in mysql
+      restore_job:
+        where: '/srv/restored'  # Where put restored files (if      set / system be restored )
+      monitor:
+        password: 'director_monitor_PA$$W0RD'
+
+  fd:
+    config:
+      director_permitted:
+        password: 'FD_PA$$W0RD'
+      director_restricted: # monitor
+        password: 'FD_MON_PA$$W0RD'
+
+  sd:
+    config:
+      director_permitted:
+        password: 'SD_PA$$W0RD'
+      director_restricted:
+        password: 'SD_MON_PA$$W0RD'
+
+
+
+
+
 
   # minimal config to create working bacula director config per user
   # not set values get from defaults.yaml file
@@ -70,9 +104,9 @@ bacula:
         job:
           level: Full
           before:
-            - '/etc/bacula/scripts/make_catalog_backup.pl MyCatalog'
+            - '/etc/bacula/scripts/easy_catalog_backup.sh'
           after:
-            - '/etc/bacula/scripts/delete_catalog_backup'
+            - '/etc/bacula/scripts/easy_catalog_backup_remove.sh'
             - '/etc/bacula/scripts/sync_backup.sh'
           prior: 11
           client: baculadir-fd

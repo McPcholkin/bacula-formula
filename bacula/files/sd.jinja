@@ -1,30 +1,29 @@
-{%- from "bacula/map.jinja" import map with context -%}
 #
 # Bacula Storage D Main Configuration File
 #
 # Managed by Salt
 #
-
-{% macro set_config(config) -%}
-  {% for parameter in config -%}
-    {% set value = config.get(parameter) -%}
-      {{ parameter }} = {{ value }}
-  {% endfor -%}
-{% endmacro -%}
-
 Storage {
-  {{ set_config(config.storage) }}
+  Name = {{ sd_name }}-sd
+  SDPort = {{ sd_port }}
+  WorkingDirectory = "{{ sd_work_dir }}"
+  Pid Directory = "{{ sd_pid_dir }}"
+  Maximum Concurrent Jobs = {{ sd_max_jobs }}
+  Heartbeat Interval = {{ sd_hb_int }}
 }
 
 # List Directors who are permitted to contact Storage daemon
 Director {
-  {{ set_config(config.director_permitted) }}
+  Name = {{ sd_dirP_name }}-dir
+  Password = "{{ sd_dirP_password }}"
 }
 
 # Restricted Director, used by tray-monitor to get the
 #   status of the storage daemon
 Director {
-  {{ set_config(config.director_restricted) }}
+  Name = {{ sd_dirR_name }}-mon
+  Password = "{{ sd_dirR_password }}"
+  Monitor = {{ sd_dirR_mon }}
 }
 
 
@@ -37,8 +36,8 @@ Director {
 # Send all messages to the Director,
 # mount messages also are sent to the email address
 Messages {
-  Name = Standard
-  director = {{ config.messages.director }} = all
+  Name = {{ sd_mess_name }}
+  director = {{ sd_mess_director }}-dir = all
 }
 
 

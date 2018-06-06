@@ -2,32 +2,33 @@
 # Managed by Salt
 #
 
-{% macro set_config(config) -%}
-  {% for parameter in config -%}
-    {% set value = config.get(parameter) -%}
-      {{ parameter }} = {{ value }}
-  {% endfor -%}
-{% endmacro -%}
-
 # list Directors who are permitted to contact this File daemon
 Director { 
-  {{ set_config(config.director_permitted) }}
+  Name = {{ dirP_name }}-dir
+  Password = "{{ dirP_password }}"
 }
 
 # Restricted Director, used by tray-monitor to get the
 #   status of the file daemon
 Director {
-  {{ set_config(config.director_restricted) }}
+  Name = {{ dirR_name }}-mon
+  Password = "{{ dirR_password }}"
+  Monitor = {{ dirR_mon }}
 }
 
 # "Global" File daemon configuration specifications
 FileDaemon {
-  {{ set_config(config.fd) }}
+  Name = {{ fd_name }}-fd
+  FDPort = {{ fd_port }}
+  WorkingDirectory = "{{ fd_work_dir }}"
+  Pid Directory = "{{ fd_pid_dir }}"
+  Maximum Concurrent Jobs = {{ fd_max_jobs }}
+  Heartbeat Interval = {{ fd_hb_int }}
 }
 
 # Send all messages except skipped files back to Director
 Messages {
-  Name = Standard
-  director = {{ config.messages.director }} = all, !skipped, !restored
+  Name = {{ mess_name }}
+  director = {{ mess_dir }}-dir = all, !skipped, !restored
 }
 

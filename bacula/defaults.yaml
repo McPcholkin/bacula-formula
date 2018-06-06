@@ -1,15 +1,16 @@
 bacula:
+# -----------------------------------------------------------------------
   console:
     user: root
     group: root
     pkg: bacula-console
     config_path: /etc/bacula/bconsole.conf
     config:
-      Name: bacula-dir
-      DIRport: 9101
-      Address: localhost
-      Password: '"password_director"'
-
+      name: bacula
+      port: 9101
+      address: localhost
+      password: 'password_director'
+# -----------------------------------------------------------------------
   director:
     simple: True # Director and SD on one host (minimum pillar data )
     user: bacula
@@ -19,6 +20,7 @@ bacula:
       - bacula-director-mysql
     #dbroot_user: mysqlRootUser
     #dbroot_pass: mysqlRootPass
+    dbtype: mysql
     service: bacula-director
     config_path: /etc/bacula/bacula-dir.conf
     config_dir: /etc/bacula/bacula-dir.conf.d
@@ -26,6 +28,63 @@ bacula:
     logfile: /var/log/bacula/bacula.log
     bootstrap_dir: '/srv/bacula/bootstrap'
     admin_email: 'admin@example.com'
+    fqdn: bacula.example.com
+
+    config:
+      director:
+        name: bacula   
+        password: 'director_password'  # console password
+        port: 9101
+        query: '/etc/bacula/scripts/query.sql'
+        work_dir: '/var/lib/bacula'
+        pid_dir: '/var/run/bacula'
+        max_jobs: 1
+        messages: Daemon        
+        hb_interval: '1m'
+      catalog:
+        name: MyCatalog
+        db_name: 'bacula'
+        db_address: 'localhost'        
+        db_user: 'bacula-dir'
+        db_password: 'mysql_password' # used in mysql
+      restore_job:                    # default restore job
+        name: 'RestoreFiles'          # Job Name
+        type: Restore                 # Job Type
+        client: bacula                # Any
+        fileset: 'DummyRestoreSet'    # Any
+        storage: 'DummyRestoreStorage' # Any
+        pool: DummyPool               # Any
+        messages: Standard        
+        where: '/srv/restored'  # Where put restored files (if      set / system be restored )
+      restore_client:
+        name: bacula
+        address: baculaserver.example.com
+        port: 9102
+        catalog: MyCatalog
+        password: 'fd_password'     # password for FileDaemon
+        Fret: '1 year'      # Real period in Pool section
+        Jret: '1 year'    
+        autoprune: 'yes'    # Prune expired Jobs/Files
+      restore_pool:                     # Not used in real restore
+        name: DummyPool     # Pool Name
+        type: Backup        # Pool Type
+        rec: 'yes'          # Bacula can automatically recycle Volumes
+        autoprune: 'yes'
+        ret: '365 days'  # Volume save one year
+      restore_storage:    # Not used in real restore but must be a real
+        name: DummyRestoreStorage   # Storage name
+        address: 'baculaserver.example.com' # Address
+        port: 9103
+        password: 'password_storage'
+        dev: bacula
+        type: bacula
+      restore_fileset:
+        name: 'DummyRestoreSet'
+      monitor:
+        name: bacula
+        password: 'password_monitor'
+        acl: 'status, .status'
+      
     clients_defaults:     # client = default
       job:
         name: default_Backup # Client Name (Uniq)
@@ -114,7 +173,6 @@ bacula:
             wilddir:
               - 'System Volume Information'
               - 'TEMP'
-
       schedule:
         name: default-year
         mon:  # Monthly
@@ -208,122 +266,56 @@ bacula:
             l3ieILNbsknVVIKnxOKSrUCAwEA
             DSgYUrxG9rURas6Qn2LKmmNjlaX
             -----END RSA PRIVATE KEY-----
-
-        
-
-    config:
-      director:
-        Name: bacula-dir
-        DIRport: 9101
-        QueryFile: '"/etc/bacula/scripts/query.sql"'
-        WorkingDirectory: '"/var/lib/bacula"'
-        PidDirectory: '"/var/run/bacula"'
-        'Maximum Concurrent Jobs': 1
-        Password: '"password_director"'  # console password
-        Messages: Daemon
-        'Heartbeat Interval': 1m
-      catalog:
-        Name: MyCatalog
-        DBName: '"bacula"'
-        'DB Address': '"localhost"'
-        DBUser: '"bacula-dir"'
-        DBPassword: '"password_mysql"'  # used in mysql
-      
-      restore_job:                    # default restore job
-        Name: '"RestoreFiles"'        # Job Name
-        Type: Restore                 # Job Type
-        Client: bacula-fd             # Any
-        FileSet: '"DummyRestoreSet"'  # Any
-        Storage: DummyRestoreStorage  # Any
-        Pool: DummyPool               # Any
-        Messages: Standard
-        Where: '/srv/restored'  # Where put restored files (if  set / system be restored )
-
-      restore_client:
-        Name: bacula-fd
-        Address: 'baculaserver.example.com'
-        FDPort: 9102
-        Catalog: MyCatalog
-        Password: '"password_fd"'       # password for FileDaemon
-        'File Retention': '1 year'      # Real period in Pool section
-        'Job Retention': '1 year'       
-        AutoPrune: 'yes'                # Prune expired Jobs/Files        
-
-      restore_pool:                     # Not used in real restore
-        Name: DummyPool                 # Pool Name
-        'Pool Type': Backup             # Pool Type
-        Recycle: 'yes'                  # Bacula can automatically recycle Volumes
-        AutoPrune: 'yes'                # Prune expired volumes
-        'Volume Retention': '365 days'  # Volume save one year
-
-      restore_storage:    # Not used in real restore but must be a real
-        Name: DummyRestoreStorage           # Storage name
-        Address: 'baculaserver.example.com' # Address
-        SDPort: 9103
-        Password: '"password_storage"'
-        Device: FileStorage-BaculaServer
-        'Media Type': File-BaculaServer
-
-      restore_fileset:
-        Name: '"DummyRestoreSet"'
-
-      monitor:
-        Name: bacula-mon
-        Password: '"password_monitor"'
-        CommandACL: 'status, .status'
-      
-
-
-
-
+# -----------------------------------------------------------------------
   fd:
     pkg: bacula-fd
     service: bacula-fd
     config_path: /etc/bacula/bacula-fd.conf
     config:
       director_permitted:
-        Name: bacula-dir
-        Password: '"password_fd"'
+        name: bacula
+        password: 'password_fd'
       director_restricted:
-        Name: bacula-mon
-        Password: '"password_fd_mon"'
-        Monitor: 'yes'
+        name: bacula
+        password: 'password_fd_mon'
+        mon: 'yes'
       fd:
-        Name: bacula-fd
-        FDPort: 9102
-        WorkingDirectory: /var/lib/bacula
-        'Pid Directory': /var/run/bacula
-        'Maximum Concurrent Jobs': 20
-        'Heartbeat Interval': '1m'
+        name: bacula
+        port: 9102
+        work_dir: /var/lib/bacula
+        pid_dir: /var/run/bacula
+        max_jobs: 20
+        hb_int: '1m'
       messages:
-        director: bacula-dir
-
+        name: Standard
+        director: bacula
+# -----------------------------------------------------------------------
   sd:
     pkg: bacula-sd
     service: bacula-sd
     config_path: /etc/bacula/bacula-sd.conf
     config_dir: /etc/bacula/bacula-sd.conf.d
     storage: /srv/bacula
-    fqdn: sd.example.com
     user: bacula
     group: bacula
     config:
       storage:
-        Name: bacula-sd
-        SDPort: 9103
-        WorkingDirectory: '"/var/lib/bacula"'
-        'Pid Directory': '"/var/run/bacula"'
-        'Maximum Concurrent Jobs': 20
-        'Heartbeat Interval': '1m'
+        name: bacula
+        port: 9103
+        work_dir: /var/lib/bacula
+        pid_dir: /var/run/bacula
+        max_jobs: 20
+        hb_int: '1m'
       director_permitted:
-        Name: bacula-dir
-        Password: '"password_sd"'
+        name: bacula
+        password: 'password_sd'
       director_restricted:
-        Name: bacula-mon
-        Password: '"password_sd_mon"'
-        Monitor: 'yes'
+        name: bacula
+        password: 'password_sd_mon'
+        mon: 'yes'
       messages:
-        director: bacula-dir
+        name: Standard
+        director: bacula
     clients_defaults:
       name: FileStorage-default     # Name
       dev_arch: /srv/bacula/default # Archive Device
@@ -335,5 +327,5 @@ bacula:
       auto_mnt: 'yes'               # Automatic Mount
       alw_open: 'no'                # AlwaysOpen
       max_buff: 65536     # Maximum Network Buffer Size
-
+# -----------------------------------------------------------------------
 
