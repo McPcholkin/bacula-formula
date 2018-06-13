@@ -271,6 +271,17 @@ bacula:
     pkg: bacula-fd
     service: bacula-fd
     config_path: /etc/bacula/bacula-fd.conf
+    win_config_path: 'C:\\Program Files\\Bacula\\bacula-fd.conf'
+    win_pkg_url: http://blog.bacula.org/download/1973/
+    win_pkg_md5: 2ca6a1d91d2a64a8e074eb619e54c072
+    win_scripts: 'C:\\Scripts'
+    user: root
+    group: root
+    config_win:
+      fd:
+        work_dir: 'C:\\Program Files\\Bacula\\working'
+        pid_dir: 'C:\\Program Files\\Bacula\\working'
+        plugin_dir: 'C:\\Program Files\\Bacula\\plugins'
     config:
       director_permitted:
         name: bacula

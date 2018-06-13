@@ -1,7 +1,7 @@
 {%- from "bacula/map.jinja" import map with context -%}
 
 include:
-  - bacula.fd.install
+  - bacula.fd.win_install
 
 {% set client_id = salt['grains.get']('id') %}
 {# ---- DIR start ---- #}
@@ -14,9 +14,10 @@ include:
 {# ---- FD start ---- #}
 {% set fd_name = client_id %}
 {% set fd_port = map.fd.config.fd.port %}
-{% set fd_work_dir = map.fd.config.fd.work_dir %}
-{% set fd_pid_dir = map.fd.config.fd.pid_dir %}
+{% set fd_work_dir = map.fd.config_win.fd.work_dir %}
+{% set fd_pid_dir = map.fd.config_win.fd.pid_dir %}
 {% set fd_max_jobs = map.fd.config.fd.max_jobs %}
+{% set fd_plugin_dir = map.fd.config_win.fd.plugin_dir %}
 {% set fd_hb_int = map.fd.config.fd.hb_int %}
 {# ---- FD end ---- #}
 {# ---- MESSAGES start ---- #}
@@ -26,10 +27,9 @@ include:
 
 fd_config_{{ client_id }}:
   file.managed:
-    - name: {{ map.fd.config_path }}
-    - source: salt://bacula/files/fd.jinja
+    - name: {{ map.fd.win_config_path }}
+    - source: salt://bacula/files/fd_win.jinja
     - template: jinja
-    - mode: 640
     - makedirs: True
     - context:
       {# ----- VAR ----- #}
@@ -42,15 +42,16 @@ fd_config_{{ client_id }}:
       fd_port: {{ fd_port }}
       fd_work_dir: {{ fd_work_dir }}
       fd_pid_dir: {{ fd_pid_dir }}
+      fd_plugin_dir: {{ fd_plugin_dir }}
       fd_max_jobs: {{ fd_max_jobs }}
       fd_hb_int: {{ fd_hb_int }}
       mess_name: {{ mess_name }}
       mess_dir: {{ mess_dir }}
       {# ----- VAR ----- #}
     - require:
-      - pkg: install_bacula_fd
+      - file: install_bacula_fd_win
     - watch_in:
-      - service: install_bacula_fd
+      - service: install_bacula_fd_win
 
 
 {# ---- add user scripts if exist ---- #}
@@ -61,17 +62,8 @@ fd_config_{{ client_id }}:
 
 create_{{ script }}:
   file.managed:
-    - name: {{ script }}
-  {% if '.sh' in script %}
-    - mode: 740
-  {% elif '.key' in script %}
-    - mode: 600
-  {% else %}
-    - mode: 640
-  {% endif %}
+    - name: {{ map.fd.win_scripts }}\\{{ script }}
     - makedirs: True
-    - user: {{ map.fd.user }}
-    - group: {{ map.fd.group }}
     - contents_pillar: bacula:clients:{{ client_id }}:scripts:client:{{ script }}
 
 {% endfor %}
