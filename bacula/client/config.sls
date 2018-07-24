@@ -3,7 +3,8 @@
 include:
   - bacula.fd.install
 
-{% set client_id = salt['grains.get']('id') %}
+{% set client_id = salt['grains.get']('id').split('.') | first %}
+
 {# ---- DIR start ---- #}
 {% set dirP_name = map.director.config.director.name %}
 {% set dirP_password = salt['pillar.get']('bacula:clients:'~client_id~':dir:client:password') %}
