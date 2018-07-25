@@ -28,6 +28,7 @@ bacula:
     logfile: /var/log/bacula/bacula.log
     bootstrap_dir: '/srv/bacula/bootstrap'
     admin_email: 'admin@example.com'
+    smtp_server: 'localhost'
     fqdn: bacula.example.com
 
     config:
@@ -253,6 +254,12 @@ bacula:
           labl_form: BaseDefault
           stor: FileStorage-default
       scripts:
+        client_user: clientuser     # user who need run script
+        client_group: clientgroup   # group who need run script
+        client:
+          '/home/user/programs/1S7_backup.sh': |
+            #!/bin/sh
+            wine "$StartFile" config /DD:\ /N /P /@E:\1s_backup.ini
         dir:
           'some_script.sh': |
             #!/bin/bash

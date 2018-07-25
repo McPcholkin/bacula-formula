@@ -57,6 +57,8 @@ fd_config_{{ client_id }}:
 {# ---- add user scripts if exist ---- #}
 {% set scripts = salt['pillar.get']('bacula:clients:'~client_id~':scripts:client', False) %}
 {% if scripts %}
+{% set custom_script_user = salt['pillar.get']('bacula:clients:'~client_id~':scripts:client_user', False) %}
+{% set custom_script_group = salt['pillar.get']('bacula:clients:'~client_id~':scripts:client_group', False) %}
 
 {% for script in scripts %}
 
@@ -71,8 +73,17 @@ create_{{ script }}:
     - mode: 640
   {% endif %}
     - makedirs: True
+  {% if custom_script_user %}
+    - user: {{ custom_script_user }}
+  {% else %}
     - user: {{ map.fd.user }}
+  {% endif %}
+
+  {% if custom_script_group %}
+    - group: {{ custom_script_group }}
+  {% else %}
     - group: {{ map.fd.group }}
+  {% endif %}
     - contents_pillar: bacula:clients:{{ client_id }}:scripts:client:{{ script }}
 
 {% endfor %}
