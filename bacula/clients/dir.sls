@@ -49,11 +49,27 @@ create_bootstrap_dir:
 {# --- use default include / exclude templates in simple mode --- #}
 {% if map.director.simple and salt['pillar.get']('bacula:clients:'~client~':os', False) == 'linux' %}
   {% set fs_default_linux = map.director.clients_defaults.fileset.fs_defaults.linux %}
-  {% set fs_client = salt['pillar.get']('bacula:clients:'~client~':dir:fileset', {}) %}
+  {% set fs_client = salt['pillar.get']('bacula:clients:'~client~':dir:fileset', {} ) %}
+
   {% set fs_merged = salt['slsutil.merge'](fs_default_linux, fs_client, merge_lists=True) %}
 
-  {% set fs_include = fs_merged.include %}
-  {% set fs_exclude = fs_merged.exclude %}
+  {# --- dirty hack to filter unique items in list --- #}
+  {% set fs_include = '' %}
+  {% set fs_include = [] %}  
+  {% for inc_item in fs_merged.include %}
+    {% if inc_item not in fs_include %}
+      {% do fs_include.append(inc_item) %}
+    {% endif %}
+  {% endfor %}
+
+  {% set fs_exclude = '' %}
+  {% set fs_exclude = [] %}
+  {% for exc_item in fs_merged.exclude %}
+    {% if exc_item not in fs_exclude %}
+      {% do fs_exclude.append(exc_item) %}
+    {% endif %}
+  {% endfor %}
+  {# --------------------------------------------- #}
 
   {% set fs_exclude_win = salt['pillar.get']('bacula:clients:'~client~':dir:fileset:exclude_win', False) %}
   {% set fs_wildfile = salt['pillar.get']('bacula:clients:'~client~':dir:fileset:wildfile', map.director.clients_defaults.fileset.wildfile) %}
@@ -64,7 +80,7 @@ create_bootstrap_dir:
   {% set fs_exclude_win = salt['pillar.get']('bacula:clients:'~client~':dir:fileset:exclude_win', 'yes') %}
   {% set fs_default_windows = map.director.clients_defaults.fileset.fs_defaults.windows %}
   {% set fs_client = salt['pillar.get']('bacula:clients:'~client~':dir:fileset', {}) %}
-  {% set fs_merged = salt['slsutil.merge'](fs_default_windows, fs_client, merge_lists=True) %}
+  {% set fs_merged = salt['slsutil.merge'](fs_default_windows, fs_client, strategy='smart', merge_lists=True) %}
   
   {% set fs_wildfile = fs_merged.wildfile %}
   {% set fs_wilddir = fs_merged.wilddir %}

@@ -106,8 +106,8 @@ Messages {
 #  for example, a 'no-reply@mydomain.com', is better since that tends to
 #  tell (most) people that its coming from an automated source.
 
-  mailcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) \<%r\>\" -s \"Bacula: %t %e of %c %l %n\" %r"
-  operatorcommand = "/usr/sbin/bsmtp -h localhost -f \"\(Bacula\) \<%r\>\" -s \"Bacula: Intervention needed for %j\" %r"
+  mailcommand = "/usr/sbin/bsmtp -h {{ map.director.smtp_server }} -f \"\(Bacula\) \<%r\>\" -s \"Bacula: %t %e of %c %l %n\" %r"
+  operatorcommand = "/usr/sbin/bsmtp -h {{ map.director.smtp_server }} -f \"\(Bacula\) \<%r\>\" -s \"Bacula: Intervention needed for %j\" %r"
   mail = {{ map.director.admin_email }}  = all, !skipped
   operator = root = mount
   console = all, !skipped, !saved

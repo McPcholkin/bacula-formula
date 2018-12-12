@@ -41,7 +41,7 @@ bacula:
         pid_dir: '/var/run/bacula'
         max_jobs: 1
         messages: Daemon        
-        hb_interval: '1m'
+        hb_interval: '1 min'
       catalog:
         name: MyCatalog
         db_name: 'bacula'
@@ -303,7 +303,7 @@ bacula:
         work_dir: /var/lib/bacula
         pid_dir: /var/run/bacula
         max_jobs: 20
-        hb_int: '1m'
+        hb_int: '1 min'
       messages:
         name: Standard
         director: bacula
@@ -323,7 +323,7 @@ bacula:
         work_dir: /var/lib/bacula
         pid_dir: /var/run/bacula
         max_jobs: 20
-        hb_int: '1m'
+        hb_int: '1 min'
       director_permitted:
         name: bacula
         password: 'password_sd'
